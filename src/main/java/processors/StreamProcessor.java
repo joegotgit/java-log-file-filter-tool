@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -24,11 +25,13 @@ public class StreamProcessor {
 		this.logLinePattern = patternStartOfLogLine;
 	}
 
-	public void execute(final Consumer<String> consumer) {
+	public void execute(final List<Consumer<String>> consumerList) {
 		try {
 			String logEntry = getNextLogEntry();
 			while (logEntry != null) {
-				consumer.accept(logEntry);
+				for (Consumer<String> consumer : consumerList) {
+					consumer.accept(logEntry);
+				}
 				logEntry = getNextLogEntry();
 			}
 		} catch (IOException e) {

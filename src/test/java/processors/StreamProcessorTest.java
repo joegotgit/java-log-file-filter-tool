@@ -1,6 +1,7 @@
 package processors;
 
 import java.io.BufferedReader;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -19,6 +20,8 @@ public class StreamProcessorTest {
 	BufferedReader bufferedInputMock;
 	@Mock
 	Consumer<String> consumer;
+	@Mock
+	Consumer<String> consumer2;
 
 	private StreamProcessor testee;
 
@@ -104,9 +107,27 @@ public class StreamProcessorTest {
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
 		Mockito.when(testee.getNextLogEntry()).thenReturn(firstLine, secondLine, null);
 
-		testee.execute(consumer);
+		testee.execute(Arrays.asList(consumer));
 		Mockito.verify(consumer).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
 		Mockito.verify(consumer).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
 		Mockito.verify(consumer, Mockito.times(2)).accept(Mockito.anyString());
+	}
+
+	@Test
+	public void testExecuteMoreThanOneConsumer() throws Exception {
+		testee = Mockito.spy(testee);
+
+		String firstLine = "2016-04-27 14:68:44,123 First Line";
+		String secondLine = "2016-04-27 14:68:44,333 Second Line";
+		Mockito.when(testee.getNextLogEntry()).thenReturn(firstLine, secondLine, null);
+
+		testee.execute(Arrays.asList(consumer, consumer2));
+		Mockito.verify(consumer).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer, Mockito.times(2)).accept(Mockito.anyString());
+
+		Mockito.verify(consumer2).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer2).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer2, Mockito.times(2)).accept(Mockito.anyString());
 	}
 }
