@@ -1,29 +1,34 @@
 package processors;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
-import junit.framework.Assert;
-
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import junit.framework.Assert;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StreamProcessorTest {
 	@Mock
 	BufferedReader bufferedInputMock;
 	@Mock
-	InputStream input;
-	@Mock
 	Consumer<String> consumer;
+	@Mock
+	Consumer<String> consumer2;
 
-	@InjectMocks
 	private StreamProcessor testee;
+
+	@Before
+	public void setup() {
+		testee = new StreamProcessor(bufferedInputMock, Pattern.compile("^[0-9-]{10} [0-9:,]{12}"));
+	}
 
 	@Test
 	public void testIsLogLineResultTrue() throws Exception {
@@ -37,40 +42,30 @@ public class StreamProcessorTest {
 		Assert.assertFalse(testee.isLogLine(line));
 	}
 
-	protected void initBufferedMock() {
-		testee.input = bufferedInputMock;
-	}
-
 	@Test
 	public void testGetNextLogEntryAtTheBeginOfFile() throws Exception {
-		initBufferedMock();
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
-		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine,
-				secondLine);
+		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine, secondLine);
 
-		Assert.assertEquals(firstLine + "\n", testee.getNextLogEntry());
+		Assert.assertEquals(firstLine + StreamProcessor.LINE_SEPARATOR, testee.getNextLogEntry());
 	}
 
 	@Test
 	public void testGetNextLogEntryMovesToNextEntry() throws Exception {
-		initBufferedMock();
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
-		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine,
-				secondLine, null);
+		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine, secondLine, null);
 
 		testee.getNextLogEntry();
-		Assert.assertEquals(secondLine + "\n", testee.getNextLogEntry());
+		Assert.assertEquals(secondLine + StreamProcessor.LINE_SEPARATOR, testee.getNextLogEntry());
 	}
 
 	@Test
 	public void testGetNextLogEntryReturnsNullAtTheEndOfFile() throws Exception {
-		initBufferedMock();
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
-		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine,
-				secondLine, null);
+		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine, secondLine, null);
 
 		testee.getNextLogEntry();
 		testee.getNextLogEntry();
@@ -78,51 +73,61 @@ public class StreamProcessorTest {
 	}
 
 	@Test
-	public void testGetNextLogEntryForMultiLineLogEntryFollowedByAnotherEntry()
-			throws Exception {
-		initBufferedMock();
+	public void testGetNextLogEntryForMultiLineLogEntryFollowedByAnotherEntry() throws Exception {
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
 		String thirdLine = "  at AnyClass.anyMethod(215)";
 		String fourthLine = "2016-04-27 14:68:44,444 Fourth Line";
-		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine,
-				secondLine, thirdLine, fourthLine, null);
+		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine, secondLine, thirdLine, fourthLine, null);
 
 		testee.getNextLogEntry();
-		Assert.assertEquals(secondLine + "\n" + thirdLine + "\n",
+		Assert.assertEquals(secondLine + StreamProcessor.LINE_SEPARATOR + thirdLine + StreamProcessor.LINE_SEPARATOR,
 				testee.getNextLogEntry());
-		Assert.assertEquals(fourthLine + "\n", testee.getNextLogEntry());
+		Assert.assertEquals(fourthLine + StreamProcessor.LINE_SEPARATOR, testee.getNextLogEntry());
 	}
 
 	@Test
-	public void testGetNextLogEntryForMultiLineLogEntryAtTheEndOfFile()
-			throws Exception {
-		initBufferedMock();
+	public void testGetNextLogEntryForMultiLineLogEntryAtTheEndOfFile() throws Exception {
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
 		String thirdLine = "  at AnyClass.anyMethod(215)";
-		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine,
-				secondLine, thirdLine, null);
+		Mockito.when(bufferedInputMock.readLine()).thenReturn(firstLine, secondLine, thirdLine, null);
 
 		testee.getNextLogEntry();
-		Assert.assertEquals(secondLine + "\n" + thirdLine + "\n",
+		Assert.assertEquals(secondLine + StreamProcessor.LINE_SEPARATOR + thirdLine + StreamProcessor.LINE_SEPARATOR,
 				testee.getNextLogEntry());
 		Assert.assertNull(testee.getNextLogEntry());
 	}
 
 	@Test
 	public void testExecute() throws Exception {
-		initBufferedMock();
 		testee = Mockito.spy(testee);
 
 		String firstLine = "2016-04-27 14:68:44,123 First Line";
 		String secondLine = "2016-04-27 14:68:44,333 Second Line";
-		Mockito.when(testee.getNextLogEntry()).thenReturn(firstLine,
-				secondLine, null);
+		Mockito.when(testee.getNextLogEntry()).thenReturn(firstLine, secondLine, null);
 
-		testee.execute(consumer);
-		Mockito.verify(consumer).accept(firstLine + "\n");
-		Mockito.verify(consumer).accept(secondLine + "\n");
+		testee.execute(Arrays.asList(consumer));
+		Mockito.verify(consumer).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
 		Mockito.verify(consumer, Mockito.times(2)).accept(Mockito.anyString());
+	}
+
+	@Test
+	public void testExecuteMoreThanOneConsumer() throws Exception {
+		testee = Mockito.spy(testee);
+
+		String firstLine = "2016-04-27 14:68:44,123 First Line";
+		String secondLine = "2016-04-27 14:68:44,333 Second Line";
+		Mockito.when(testee.getNextLogEntry()).thenReturn(firstLine, secondLine, null);
+
+		testee.execute(Arrays.asList(consumer, consumer2));
+		Mockito.verify(consumer).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer, Mockito.times(2)).accept(Mockito.anyString());
+
+		Mockito.verify(consumer2).accept(firstLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer2).accept(secondLine + StreamProcessor.LINE_SEPARATOR);
+		Mockito.verify(consumer2, Mockito.times(2)).accept(Mockito.anyString());
 	}
 }
