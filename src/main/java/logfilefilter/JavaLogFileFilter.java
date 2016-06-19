@@ -49,7 +49,7 @@ public class JavaLogFileFilter {
 	 * The default pattern identify a log message when a line starts with
 	 * "yyyy-MM-dddd HH:mm:ss,SSS". For example: 2016-04-27 14:38:44,123
 	 */
-	public String DEFAULT_DATE_PATTERN = "^[0-9-]{10} [0-9:,]{12}";
+	public static final String DEFAULT_DATE_PATTERN = "^[0-9-]{10} [0-9:,]{12}";
 
 	private String includePattern = null;
 	private String excludePattern = null;
