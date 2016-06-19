@@ -6,6 +6,9 @@ public class CommandLineUi {
 	private final JavaLogFileFilter processor = new JavaLogFileFilter();
 
 	public void parseCommandLineParameters(String[] args) {
+		String errorMessage = "No parameters defined";
+		boolean invalidParameters = args.length == 0;
+
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
 			case "-i":
@@ -24,14 +27,19 @@ public class CommandLineUi {
 				processor.setTargetFilePath(args[++i]);
 				break;
 			default:
-				throw new IllegalArgumentException("Parameter '" + args[i] + "' is unknown.\n" //
-						+ "The following parameters can be used:\n" //
-						+ "  -i  Include regex pattern\n" //
-						+ "  -e  Exclude regex pattern\n" //
-						+ "  -d  Date pattern used to identify the begin of a log entry\n" //
-						+ "  -f  Source file\n" //
-						+ "  -t  Target file, to write the resulting logs");
+				invalidParameters = true;
+				errorMessage = "Parameter '" + args[i] + "' is unknown.";
 			}
+		}
+
+		if (invalidParameters) {
+			throw new IllegalArgumentException(errorMessage + "\n" //
+					+ "The following parameters can be used:\n" //
+					+ "  -i  Include regex pattern\n" //
+					+ "  -e  Exclude regex pattern\n" //
+					+ "  -d  Date pattern used to identify the begin of a log entry\n" //
+					+ "  -f  Source file\n" //
+					+ "  -t  Target file, to write the resulting logs");
 		}
 	}
 
