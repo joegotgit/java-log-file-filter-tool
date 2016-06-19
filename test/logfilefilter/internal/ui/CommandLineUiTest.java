@@ -15,7 +15,7 @@ import junit.framework.Assert;
 public class CommandLineUiTest {
 	public static final String SIMPLE_LOG_FILE = "./test/resource/testLogs/simple_test.logfile";
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-	ByteArrayOutputStream out = new ByteArrayOutputStream();
+	private ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 	@InjectMocks
 	private CommandLineUi testee;
