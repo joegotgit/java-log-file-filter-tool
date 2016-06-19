@@ -29,6 +29,7 @@ public class CommandLineUi {
 			default:
 				invalidParameters = true;
 				errorMessage = "Parameter '" + args[i] + "' is unknown.";
+				break;
 			}
 		}
 

@@ -59,19 +59,36 @@ public class JavaLogFileFilter {
 	private String sourceFilePath = null;
 	private String targetFilePath = null;
 
+	private class ProcessorContext {
+		private String lastWrittenLogEntry = "";
+		private OutputStream out;
+
+		public ProcessorContext(OutputStream out) {
+			this.out = out;
+		}
+
+		public void writeIfNotDoneYet(String logEntry) {
+			if (!lastWrittenLogEntry.equals(logEntry)) {
+				try {
+					out.write(logEntry.getBytes());
+					lastWrittenLogEntry = logEntry;
+				} catch (Exception e) {
+					throw new IllegalStateException(e);
+				}
+			}
+		}
+	}
+
 	public void execute() throws IOException {
 		List<Consumer<String>> consumerList = new ArrayList<>();
 
 		try (OutputStream out = getOutStream(); InputStream in = getInputStream()) {
+			ProcessorContext processorCtx = new ProcessorContext(out);
 			if (includePattern != null) {
 				Pattern includePattern = Pattern.compile(this.includePattern);
 				consumerList.add(logEntry -> {
 					if (includePattern.matcher(logEntry).find()) {
-						try {
-							out.write(logEntry.getBytes());
-						} catch (Exception e) {
-							throw new IllegalStateException(e);
-						}
+						processorCtx.writeIfNotDoneYet(logEntry);
 					}
 				});
 			}
@@ -80,11 +97,7 @@ public class JavaLogFileFilter {
 				Pattern excludePattern = Pattern.compile(this.excludePattern);
 				consumerList.add(logEntry -> {
 					if (!excludePattern.matcher(logEntry).find()) {
-						try {
-							out.write(logEntry.getBytes());
-						} catch (Exception e) {
-							throw new IllegalStateException(e);
-						}
+						processorCtx.writeIfNotDoneYet(logEntry);
 					}
 				});
 			}
