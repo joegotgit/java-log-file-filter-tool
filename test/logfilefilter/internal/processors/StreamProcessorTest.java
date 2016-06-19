@@ -1,4 +1,4 @@
-package processors;
+package logfilefilter.internal.processors;
 
 import java.io.BufferedReader;
 import java.util.Arrays;
@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import junit.framework.Assert;
+import logfilefilter.internal.processors.StreamProcessor;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StreamProcessorTest {

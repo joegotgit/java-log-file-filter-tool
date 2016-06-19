@@ -1,0 +1,5 @@
+2016-04-27 14:38:44,123 INFO First log
+2016-04-27 14:38:44,400 ERROR An Exception occurred: Illegal state of object ...
+   at MyClass.execute(83)
+   at MyCallingClass.run(50)
+2016-04-27 14:38:44,400 INFO Service result: ERROR
